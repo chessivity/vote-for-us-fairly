@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   castVote,
   getResults,
+  MAX_TOTAL_VOTES,
   NATALI_HEAD_START,
   type Candidate,
   type VoteResults,
@@ -72,12 +73,18 @@ function VotePage() {
           : "შენი ხმა ანონიმურად ჩაიწერა. შეგიძლია ნებისმიერ დროს შეცვალო.",
       );
     },
-    onError: () => setMessage("რაღაც შეცდომა მოხდა. სცადე ხელახლა."),
+    onError: (err) =>
+      setMessage(
+        err instanceof Error && err.message.includes("VOTE_LIMIT_REACHED")
+          ? "მიღწეულია ხმების მაქსიმალური რაოდენობა — კენჭისყრა დასრულებულია."
+          : "რაღაც შეცდომა მოხდა. სცადე ხელახლა.",
+      ),
   });
 
   const results = data;
   const total = results?.total ?? 0;
   const myVote = results?.myVote ?? null;
+  const full = results?.full ?? false;
 
   return (
     <main className="min-h-screen bg-background px-5 py-14">
@@ -128,15 +135,17 @@ function VotePage() {
 
                 <button
                   type="button"
-                  disabled={isMine || mutation.isPending}
+                  disabled={isMine || mutation.isPending || full}
                   onClick={() => mutation.mutate(c.key)}
                   className="mt-6 w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {isMine
                     ? "შენი ხმა"
-                    : myVote
-                      ? `შეცვლა: ${c.name}`
-                      : `ხმა ${c.name}-ს`}
+                    : full
+                      ? "კენჭისყრა დასრულებულია"
+                      : myVote
+                        ? `შეცვლა: ${c.name}`
+                        : `ხმა ${c.name}-ს`}
                 </button>
               </div>
             );
@@ -144,8 +153,12 @@ function VotePage() {
         </div>
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-6 py-4">
-          <span className="text-sm text-muted-foreground">სულ ხმები</span>
-          <span className="text-2xl font-bold text-card-foreground">{total}</span>
+          <span className="text-sm text-muted-foreground">
+            სულ ხმები {full ? "— ლიმიტი შევსებულია" : ""}
+          </span>
+          <span className="text-2xl font-bold text-card-foreground">
+            {total} / {MAX_TOTAL_VOTES}
+          </span>
         </div>
 
         {message && (
