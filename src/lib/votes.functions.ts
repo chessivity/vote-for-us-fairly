@@ -5,10 +5,14 @@ export type Candidate = "xareba" | "natali";
 
 export const NATALI_HEAD_START = 5;
 
+/** Maximum total votes shown (including the head start). Change this single number to adjust the cap. */
+export const MAX_TOTAL_VOTES = 21;
+
 export type VoteResults = {
   xareba: number;
   natali: number;
   total: number;
+  full: boolean;
   myVote: Candidate | null;
 };
 
@@ -35,10 +39,12 @@ async function tally(hash: string): Promise<VoteResults> {
   const list = rows ?? [];
   const xareba = list.filter((r) => r.candidate === "xareba").length;
   const natali = list.filter((r) => r.candidate === "natali").length + NATALI_HEAD_START;
+  const total = xareba + natali;
   return {
     xareba,
     natali,
-    total: xareba + natali,
+    total,
+    full: total >= MAX_TOTAL_VOTES,
     myVote: (mine?.candidate as Candidate | undefined) ?? null,
   };
 }
@@ -74,6 +80,13 @@ export const castVote = createServerFn({ method: "POST" })
         changed = true;
       }
     } else {
+      const { data: allRows, error: countError } = await supabaseAdmin
+        .from("votes")
+        .select("id");
+      if (countError) throw new Error("Could not record your vote.");
+      if ((allRows?.length ?? 0) + NATALI_HEAD_START >= MAX_TOTAL_VOTES) {
+        throw new Error("VOTE_LIMIT_REACHED");
+      }
       const { error } = await supabaseAdmin
         .from("votes")
         .insert({ candidate: data.candidate, voter_hash: hash });
