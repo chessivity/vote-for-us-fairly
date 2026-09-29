@@ -13,16 +13,16 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Xareba vs Natali — Anonymous Vote" },
+      { title: "ხარება vs ნატალი — ანონიმური კენჭისყრა" },
       {
         name: "description",
         content:
-          "Cast one anonymous vote for Xareba or Natali. One vote per person, no names, no sign-up.",
+          "მიეცი ერთი ანონიმური ხმა ხარებას ან ნატალის. ერთი ხმა ერთ ადამიანზე, სახელისა და რეგისტრაციის გარეშე.",
       },
-      { property: "og:title", content: "Xareba vs Natali — Anonymous Vote" },
+      { property: "og:title", content: "ხარება vs ნატალი — ანონიმური კენჭისყრა" },
       {
         property: "og:description",
-        content: "One anonymous vote per person. Pick your candidate and see the live result.",
+        content: "ერთი ანონიმური ხმა ერთ ადამიანზე. აირჩიე კანდიდატი და ნახე შედეგი პირდაპირ.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -34,14 +34,14 @@ export const Route = createFileRoute("/")({
 const CANDIDATES: { key: Candidate; name: string; blurb: string; tone: string }[] = [
   {
     key: "xareba",
-    name: "Xareba",
-    blurb: "Candidate one",
+    name: "ხარება",
+    blurb: "კანდიდატი #1",
     tone: "bg-[var(--xareba)]",
   },
   {
     key: "natali",
-    name: "Natali",
-    blurb: "Candidate two",
+    name: "ნატალი",
+    blurb: "კანდიდატი #2",
     tone: "bg-[var(--natali)]",
   },
 ];
@@ -68,11 +68,11 @@ function VotePage() {
       queryClient.setQueryData(["results"], result);
       setMessage(
         result.changed
-          ? "Your vote was changed. Only your latest choice counts."
-          : "Your vote was recorded anonymously. You can change it any time.",
+          ? "შენი ხმა შეიცვალა. ითვლება მხოლოდ ბოლო არჩევანი."
+          : "შენი ხმა ანონიმურად ჩაიწერა. შეგიძლია ნებისმიერ დროს შეცვალო.",
       );
     },
-    onError: () => setMessage("Something went wrong. Please try again."),
+    onError: () => setMessage("რაღაც შეცდომა მოხდა. სცადე ხელახლა."),
   });
 
   const results = data;
@@ -83,14 +83,14 @@ function VotePage() {
     <main className="min-h-screen bg-background px-5 py-14">
       <div className="mx-auto w-full max-w-3xl">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          Anonymous ballot
+          ანონიმური კენჭისყრა
         </p>
         <h1 className="mt-4 text-5xl font-extrabold leading-tight text-foreground sm:text-6xl">
-          Xareba <span className="text-muted-foreground">vs</span> Natali
+          ხარება <span className="text-muted-foreground">vs</span> ნატალი
         </h1>
         <p className="mt-4 max-w-xl text-base text-muted-foreground">
-          Pick one candidate. Your choice is stored without your name — only a scrambled
-          fingerprint of your connection is kept, so each visitor has one vote they can change.
+          აირჩიე ერთი კანდიდატი. შენი არჩევანი ინახება სახელის გარეშე — ინახება მხოლოდ
+          შენი კავშირის დაშიფრული კვალი, ასე რომ თითოეულ ვიზიტორს აქვს ერთი ხმა, რომლის შეცვლაც შეუძლია.
         </p>
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
@@ -117,12 +117,12 @@ function VotePage() {
                 <div className="mt-3 flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-card-foreground">{share}%</span>
                   <span className="text-sm text-muted-foreground">
-                    {isLoading ? "counting…" : `${count} vote${count === 1 ? "" : "s"}`}
+                    {isLoading ? "ითვლება…" : `${count} ხმა`}
                   </span>
                 </div>
                 {c.key === "natali" && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Includes a {NATALI_HEAD_START}-vote head start
+                    მოიცავს {NATALI_HEAD_START} ხმის საწყის უპირატესობას
                   </p>
                 )}
 
@@ -133,10 +133,10 @@ function VotePage() {
                   className="mt-6 w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {isMine
-                    ? "Your vote"
+                    ? "შენი ხმა"
                     : myVote
-                      ? `Change to ${c.name}`
-                      : `Vote ${c.name}`}
+                      ? `შეცვლა: ${c.name}`
+                      : `ხმა ${c.name}-ს`}
                 </button>
               </div>
             );
@@ -144,7 +144,7 @@ function VotePage() {
         </div>
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-6 py-4">
-          <span className="text-sm text-muted-foreground">Total votes cast</span>
+          <span className="text-sm text-muted-foreground">სულ ხმები</span>
           <span className="text-2xl font-bold text-card-foreground">{total}</span>
         </div>
 
@@ -155,8 +155,8 @@ function VotePage() {
         )}
 
         <p className="mt-10 text-xs leading-relaxed text-muted-foreground">
-          No accounts, no emails, no names. People sharing the same network may count as one
-          voter.
+          არც ანგარიში, არც ელფოსტა, არც სახელი. ერთ ქსელში მყოფი ადამიანები შეიძლება
+          ჩაითვალოს ერთ ამომრჩევლად.
         </p>
       </div>
     </main>
