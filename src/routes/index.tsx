@@ -2,7 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { castVote, getResults, type Candidate, type VoteResults } from "@/lib/votes.functions";
+import {
+  castVote,
+  getResults,
+  NATALI_HEAD_START,
+  type Candidate,
+  type VoteResults,
+} from "@/lib/votes.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -61,9 +67,9 @@ function VotePage() {
     onSuccess: (result) => {
       queryClient.setQueryData(["results"], result);
       setMessage(
-        result.alreadyVoted
-          ? "You have already voted from this connection. Only one vote is counted."
-          : "Your vote was recorded anonymously. Thank you!",
+        result.changed
+          ? "Your vote was changed. Only your latest choice counts."
+          : "Your vote was recorded anonymously. You can change it any time.",
       );
     },
     onError: () => setMessage("Something went wrong. Please try again."),
@@ -71,7 +77,7 @@ function VotePage() {
 
   const results = data;
   const total = results?.total ?? 0;
-  const locked = Boolean(results?.hasVoted) || mutation.isPending;
+  const myVote = results?.myVote ?? null;
 
   return (
     <main className="min-h-screen bg-background px-5 py-14">
@@ -84,13 +90,14 @@ function VotePage() {
         </h1>
         <p className="mt-4 max-w-xl text-base text-muted-foreground">
           Pick one candidate. Your choice is stored without your name — only a scrambled
-          fingerprint of your connection is kept, so each visitor can vote once.
+          fingerprint of your connection is kept, so each visitor has one vote they can change.
         </p>
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
           {CANDIDATES.map((c) => {
             const count = results ? results[c.key] : 0;
             const share = pct(count, total);
+            const isMine = myVote === c.key;
             return (
               <div
                 key={c.key}
@@ -113,14 +120,23 @@ function VotePage() {
                     {isLoading ? "counting…" : `${count} vote${count === 1 ? "" : "s"}`}
                   </span>
                 </div>
+                {c.key === "natali" && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Includes a {NATALI_HEAD_START}-vote head start
+                  </p>
+                )}
 
                 <button
                   type="button"
-                  disabled={locked}
+                  disabled={isMine || mutation.isPending}
                   onClick={() => mutation.mutate(c.key)}
                   className="mt-6 w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {results?.hasVoted ? "Vote submitted" : `Vote ${c.name}`}
+                  {isMine
+                    ? "Your vote"
+                    : myVote
+                      ? `Change to ${c.name}`
+                      : `Vote ${c.name}`}
                 </button>
               </div>
             );

@@ -3,11 +3,13 @@ import { getRequestIP, getRequestHeader } from "@tanstack/react-start/server";
 
 export type Candidate = "xareba" | "natali";
 
+export const NATALI_HEAD_START = 5;
+
 export type VoteResults = {
   xareba: number;
   natali: number;
   total: number;
-  hasVoted: boolean;
+  myVote: Candidate | null;
 };
 
 async function voterHash() {
@@ -28,12 +30,17 @@ async function tally(hash: string): Promise<VoteResults> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [{ data: rows }, { data: mine }] = await Promise.all([
     supabaseAdmin.from("votes").select("candidate"),
-    supabaseAdmin.from("votes").select("id").eq("voter_hash", hash).maybeSingle(),
+    supabaseAdmin.from("votes").select("candidate").eq("voter_hash", hash).maybeSingle(),
   ]);
   const list = rows ?? [];
   const xareba = list.filter((r) => r.candidate === "xareba").length;
-  const natali = list.filter((r) => r.candidate === "natali").length;
-  return { xareba, natali, total: xareba + natali, hasVoted: Boolean(mine) };
+  const natali = list.filter((r) => r.candidate === "natali").length + NATALI_HEAD_START;
+  return {
+    xareba,
+    natali,
+    total: xareba + natali,
+    myVote: (mine?.candidate as Candidate | undefined) ?? null,
+  };
 }
 
 export const getResults = createServerFn({ method: "GET" }).handler(async () => {
@@ -50,12 +57,28 @@ export const castVote = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const hash = await voterHash();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { data: existing } = await supabaseAdmin
       .from("votes")
-      .insert({ candidate: data.candidate, voter_hash: hash });
+      .select("id, candidate")
+      .eq("voter_hash", hash)
+      .maybeSingle();
 
-    const alreadyVoted = Boolean(error && error.code === "23505");
-    if (error && !alreadyVoted) throw new Error("Could not record your vote.");
+    let changed = false;
+    if (existing) {
+      if (existing.candidate !== data.candidate) {
+        const { error } = await supabaseAdmin
+          .from("votes")
+          .update({ candidate: data.candidate })
+          .eq("id", existing.id);
+        if (error) throw new Error("Could not change your vote.");
+        changed = true;
+      }
+    } else {
+      const { error } = await supabaseAdmin
+        .from("votes")
+        .insert({ candidate: data.candidate, voter_hash: hash });
+      if (error) throw new Error("Could not record your vote.");
+    }
 
-    return { ...(await tally(hash)), alreadyVoted };
+    return { ...(await tally(hash)), changed };
   });
